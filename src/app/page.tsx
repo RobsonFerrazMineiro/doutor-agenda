@@ -1,9 +1,5 @@
-const Home = () => {
-  return (
-    <div>
-      <h1 className="gap-4 text-3xl font-bold text-amber-700">Home</h1>
-    </div>
-  );
-};
+import { Button } from "@/components/ui/button";
 
-export default Home;
+export default function Home() {
+  return <Button>Bootcamp!</Button>;
+}
