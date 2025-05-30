@@ -29,11 +29,10 @@ const registerSchema = z.object({
   password: z.string().trim().min(8, "Senha deve ter pelo menos 8 caracteres"),
 });
 
-const SignUpForm = () => {
+const LoginForm = () => {
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: "",
       email: "",
       password: "",
     },
@@ -49,22 +48,9 @@ const SignUpForm = () => {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <CardHeader>
             <CardTitle>Criar conta</CardTitle>
-            <CardDescription>Crie uma conta para continuar.</CardDescription>
+            <CardDescription>Faça login para continuar.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Digite seu nome" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="email"
@@ -103,4 +89,4 @@ const SignUpForm = () => {
   );
 };
 
-export default SignUpForm;
+export default LoginForm;
