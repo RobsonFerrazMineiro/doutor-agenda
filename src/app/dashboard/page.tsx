@@ -1,8 +1,23 @@
-const DashboardPage = () => {
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { auth } from "@/lib/auth";
+
+import SignOutButton from "./components/sign-out-button";
+
+const DashboardPage = async () => {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) {
+    redirect("/authentication");
+  }
+
   return (
     <div className="flex h-screen flex-col items-center justify-center">
-      <h1 className="mb-4 text-4xl font-bold">Dashboard</h1>
-      <p className="text-lg">Welcome to the dashboard!</p>
+      <h1 className="mb-4 text-2xl font-bold">Dashboard</h1>
+      <p>Bem-vindo, {session?.user?.name}!</p>
+      <p>Email: {session?.user?.email}</p>
+
+      <SignOutButton />
     </div>
   );
 };
