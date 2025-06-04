@@ -106,7 +106,7 @@ export function AppSidebar() {
                   </Avatar>
                   <div>
                     <p className="test-sm font-bold">
-                      {session.data?.user.clinic.name}
+                      {session.data?.user?.clinic?.name}
                     </p>
                     <p className="text-muted-foreground text-sm">
                       {session.data?.user.email}
