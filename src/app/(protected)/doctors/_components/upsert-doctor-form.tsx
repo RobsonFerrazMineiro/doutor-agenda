@@ -1,3 +1,4 @@
+import { upsertDoctor } from "@/actions/upsert-doctor";
 import { Button } from "@/components/ui/button";
 import {
   DialogContent,
@@ -25,8 +26,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAction } from "next-safe-action/hooks";
 import { useForm } from "react-hook-form";
 import { NumericFormat } from "react-number-format";
+import { toast } from "sonner";
 import z from "zod";
 import { medicalSpecialties } from "../_constants";
 
@@ -37,11 +40,11 @@ const forSchema = z
       .string()
       .trim()
       .min(1, { message: "Especialidade é obrigatória" }),
-    appointmentsPrice: z
+    appointmentPrice: z
       .number()
       .min(1, { message: "Preço da consulta é obrigatório" }),
-    availableFromWeekDay: z.string(),
-    availableToWeekDay: z.string(),
+    availableFromWeekDays: z.string(),
+    availableToWeekDays: z.string(),
     availableFromTime: z
       .string()
       .trim()
@@ -61,23 +64,42 @@ const forSchema = z
     },
   );
 
-const UpsertDorctorForm = () => {
+interface UpsertDoctorFormProps {
+  onSuccess?: () => void;
+}
+
+const UpsertDoctorForm = ({ onSuccess }: UpsertDoctorFormProps) => {
   const form = useForm<z.infer<typeof forSchema>>({
     resolver: zodResolver(forSchema),
     defaultValues: {
       name: "",
       specialty: "",
-      appointmentsPrice: 0,
-      availableFromWeekDay: "1",
-      availableToWeekDay: "5",
+      appointmentPrice: 0,
+      availableFromWeekDays: "1",
+      availableToWeekDays: "5",
       availableFromTime: "",
       availableToTime: "",
     },
   });
 
+  const upsertDoctorAction = useAction(upsertDoctor, {
+    onSuccess: () => {
+      toast.success("Médico adicionado com sucesso!");
+      onSuccess?.();
+      form.reset();
+    },
+    onError: (error) => {
+      toast.error("Erro ao adicionar médico.");
+    },
+  });
+
   const onSubmit = (values: z.infer<typeof forSchema>) => {
-    console.log("Form submitted with data:", values);
-    // Here you would typically send the data to your API or handle it as needed
+    upsertDoctorAction.execute({
+      ...values,
+      availableFromWeekDays: parseInt(values.availableFromWeekDays),
+      availableToWeekDays: parseInt(values.availableToWeekDays),
+      appointmentPriceInCents: values.appointmentPrice * 100,
+    });
   };
 
   return (
@@ -134,7 +156,7 @@ const UpsertDorctorForm = () => {
 
           <FormField
             control={form.control}
-            name="appointmentsPrice"
+            name="appointmentPrice"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Preço da Consulta</FormLabel>
@@ -159,7 +181,7 @@ const UpsertDorctorForm = () => {
 
           <FormField
             control={form.control}
-            name="availableFromWeekDay"
+            name="availableFromWeekDays"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Dia inicial de disponibilidade</FormLabel>
@@ -189,7 +211,7 @@ const UpsertDorctorForm = () => {
 
           <FormField
             control={form.control}
-            name="availableToWeekDay"
+            name="availableToWeekDays"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Dia final de disponibilidade</FormLabel>
@@ -358,7 +380,9 @@ const UpsertDorctorForm = () => {
           />
 
           <DialogFooter>
-            <Button type="submit">Adicionar </Button>
+            <Button type="submit" disabled={upsertDoctorAction.isPending}>
+              {upsertDoctorAction.isPending ? "Adicionando..." : "Adicionar"}
+            </Button>
           </DialogFooter>
         </form>
       </Form>
@@ -366,4 +390,4 @@ const UpsertDorctorForm = () => {
   );
 };
 
-export default UpsertDorctorForm;
+export default UpsertDoctorForm;
