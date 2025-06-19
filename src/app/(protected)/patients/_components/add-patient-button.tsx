@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { UpsertPatientForm } from "./upsert-patient-form";
 
@@ -11,7 +12,10 @@ export const AddPatientButton = () => {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button>Adicionar paciente</Button>
+        <Button>
+          <Plus />
+          Adicionar paciente
+        </Button>
       </DialogTrigger>
       <UpsertPatientForm
         isOpen={isDialogOpen}
