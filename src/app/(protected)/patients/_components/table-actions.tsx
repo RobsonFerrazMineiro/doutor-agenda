@@ -1,4 +1,4 @@
-import { deletePatient } from "@/actions/delete-patient";
+import { deletePatient } from "@/actions/delete-patient/index";
 import {
   AlertDialog,
   AlertDialogAction,
