@@ -25,7 +25,7 @@ import { EditIcon, MoreVerticalIcon, TrashIcon } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import { toast } from "sonner";
-import { UpsertPatientForm } from "./upsert-patient-form";
+import { UpsertPatientForm } from "./add-patient-form";
 
 interface PatientTableActionsProps {
   patient: typeof patientsTable.$inferSelect;

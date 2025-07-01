@@ -1,6 +1,5 @@
 "use client";
 
-import { upsertAppointment } from "@/actions/upsert-appointment";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -27,88 +26,77 @@ import {
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { appointmentsTable, doctorsTable, patientsTable } from "@/db/schema";
+import { doctorsTable, patientsTable } from "@/db/schema";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { NumericFormat } from "react-number-format";
 import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
-  patientId: z.string().min(1, { message: "Selecione um paciente" }),
-  doctorId: z.string().min(1, { message: "Selecione um médico" }),
+  patientId: z.string().min(1, { message: "Paciente é obrigatório" }),
+  doctorId: z.string().min(1, { message: "Médico é obrigatório" }),
   appointmentPrice: z
     .number()
-    .min(1, { message: "Informe o valor da consulta" }),
-  date: z.date({ message: "Selecione a data" }),
-  time: z.string().min(1, { message: "Selecione o horário" }),
+    .min(1, { message: "Valor da consulta é obrigatório" }),
+  date: z.date({ message: "Data é obrigatória" }),
+  time: z.string().min(1, { message: "Horário é obrigatório" }),
 });
 
 interface AppointmentFormProps {
   isOpen: boolean;
   patients: (typeof patientsTable.$inferSelect)[];
   doctors: (typeof doctorsTable.$inferSelect)[];
-  appointment?: typeof appointmentsTable.$inferSelect;
   onSuccess?: () => void;
 }
 
-const AppointmentForm = ({
-  appointment,
+const AddAppointmentForm = ({
   patients,
   doctors,
   onSuccess,
   isOpen,
-}: AppointmentFormProps) => {
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
-  const [selectedPatientId, setSelectedPatientId] = useState<string>("");
-
-  const selectedDoctor = useMemo(
-    () => doctors.find((d) => d.id === selectedDoctorId),
-    [selectedDoctorId, doctors],
-  );
-
+}: AddAppointmentFormProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     shouldUnregister: true,
     resolver: zodResolver(formSchema),
     defaultValues: {
-      patientId: appointment?.patientId ?? "",
-      doctorId: appointment?.doctorId ?? "",
+      patientId: "",
+      doctorId: "",
       appointmentPrice: 0,
-      date: appointment?.date ?? undefined,
+      date: undefined,
       time: "",
     },
   });
 
-  const watchDoctorId = form.watch("doctorId");
-  const watchPatientId = form.watch("patientId");
+  const selectedDoctorId = form.watch("doctorId");
+  const selectedPatientId = form.watch("patientId");
+  const selectedDate = form.watch("date");
 
-  const upsertAppointmentAction = useAction(upsertAppointment, {
-    onSuccess: () => {
-      toast.success("Agendamento salvo com sucesso!");
-      onSuccess?.();
-    },
-    onError: () => {
-      toast.error("Erro ao salvar agendamento.");
-    },
+  const { data: availableTimes } = useQuery({
+    queryKey: ["available-times", selectedDate, selectedDoctorId],
+    queryFn: () =>
+      getAvailableTimes({
+        date: dayjs(selectedDate).format("YYYY-MM-DD"),
+        doctorId: selectedDoctorId,
+      }),
+    enabled: !!selectedDate && !!selectedDoctorId,
   });
 
+  // Atualizar o preço quando o médico for selecionado
   useEffect(() => {
-    if (watchDoctorId) {
+    if (selectedDoctorId) {
       const selectedDoctor = doctors.find(
-        (doctor) => doctor.id === watchDoctorId,
+        (doctor) => doctor.id === selectedDoctorId,
       );
       if (selectedDoctor) {
         form.setValue(
@@ -117,7 +105,7 @@ const AppointmentForm = ({
         );
       }
     }
-  }, [watchDoctorId, doctors, form]);
+  }, [selectedDoctorId, doctors, form]);
 
   useEffect(() => {
     if (isOpen) {
@@ -125,63 +113,50 @@ const AppointmentForm = ({
         patientId: "",
         doctorId: "",
         appointmentPrice: 0,
-        date: appointment?.date ?? undefined,
+        date: undefined,
         time: "",
       });
     }
-  }, [isOpen, form, appointment]);
+  }, [isOpen, form]);
 
-  const upsertedAppointmentAction = useAction(upsertAppointment, {
+  const createAppointmentAction = useAction(addAppointment, {
     onSuccess: () => {
-      toast.success("Agendamento salvo com sucesso!");
+      toast.success("Agendamento criado com sucesso.");
       onSuccess?.();
     },
     onError: () => {
-      toast.error("Erro ao salvar agendamento.");
+      toast.error("Erro ao criar agendamento.");
     },
   });
 
-  // Habilita campos conforme seleção
-  const isDoctorSelected = !!selectedDoctorId;
-  const isPatientSelected = !!selectedPatientId;
-  const isDateTimeEnabled = watchDoctorId && watchPatientId;
-  const isPriceEnabled = isDoctorSelected;
-
-  // Atualiza valor do preço ao selecionar médico
-  const handleDoctorChange = (value: string) => {
-    setSelectedDoctorId(value);
-    const doctor = doctors.find((d) => d.id === value);
-    if (doctor) {
-      form.setValue("appointmentPrice", doctor.appointmentPriceInCents / 100);
-    } else {
-      form.setValue("appointmentPrice", 0);
-    }
-    form.setValue("doctorId", value);
-  };
-
-  const handlePatientChange = (value: string) => {
-    setSelectedPatientId(value);
-    form.setValue("patientId", value);
-  };
-
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    upsertAppointmentAction.execute({
+    createAppointmentAction.execute({
       ...values,
-      id: appointment?.id,
-      appointmentPrice: values.appointmentPrice * 100,
+      appointmentPriceInCents: values.appointmentPrice * 100,
     });
   };
+
+  const isDateAvailable = (date: Date) => {
+    if (!selectedDoctorId) return false;
+    const selectedDoctor = doctors.find(
+      (doctor) => doctor.id === selectedDoctorId,
+    );
+    if (!selectedDoctor) return false;
+    const dayOfWeek = date.getDay();
+    return (
+      dayOfWeek >= selectedDoctor?.availableFromWeekDay &&
+      dayOfWeek <= selectedDoctor?.availableToWeekDay
+    );
+  };
+
+  const isDateTimeEnabled = selectedPatientId && selectedDoctorId;
 
   return (
     <DialogContent className="max-w-md">
       <DialogHeader>
-        <DialogTitle>
-          {appointment ? "Editar agendamento" : "Novo agendamento"}
-        </DialogTitle>
+        <DialogTitle>Novo agendamento</DialogTitle>
         <DialogDescription>
-          {appointment
-            ? "Edite os detalhes do agendamento."
-            : "Preencha os dados para criar um novo agendamento."}
+          Crie um novo agendamento para sua clínica.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -194,7 +169,7 @@ const AppointmentForm = ({
                 <FormLabel>Paciente</FormLabel>
                 <Select
                   defaultValue={field.value}
-                  onValueChange={handlePatientChange}
+                  onValueChange={field.onChange}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full">
@@ -221,7 +196,7 @@ const AppointmentForm = ({
                 <FormLabel>Médico</FormLabel>
                 <Select
                   defaultValue={field.value}
-                  onValueChange={handleDoctorChange}
+                  onValueChange={field.onChange}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full">
@@ -258,8 +233,8 @@ const AppointmentForm = ({
                     thousandSeparator="."
                     customInput={Input}
                     prefix="R$ "
-                    disabled={!isPriceEnabled}
-                    placeholder="R$ 0,00"
+                    disabled={!selectedDoctorId}
+                    allowNegative={false}
                   />
                 </FormControl>
                 <FormMessage />
@@ -286,7 +261,7 @@ const AppointmentForm = ({
                       {field.value ? (
                         format(field.value, "PPP", { locale: ptBR })
                       ) : (
-                        <span>Selecione a data</span>
+                        <span>Selecione uma data</span>
                       )}
                     </Button>
                   </PopoverTrigger>
@@ -296,10 +271,9 @@ const AppointmentForm = ({
                       selected={field.value}
                       onSelect={field.onChange}
                       disabled={(date) =>
-                        date < new Date() || date < new Date("1900-01-01")
+                        date < new Date() || !isDateAvailable(date)
                       }
                       initialFocus
-                      locale={ptBR}
                     />
                   </PopoverContent>
                 </Popover>
@@ -324,53 +298,15 @@ const AppointmentForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Manhã</SelectLabel>
-                      <SelectItem value="05:00:00">05:00</SelectItem>
-                      <SelectItem value="05:30:00">05:30</SelectItem>
-                      <SelectItem value="06:00:00">06:00</SelectItem>
-                      <SelectItem value="06:30:00">06:30</SelectItem>
-                      <SelectItem value="07:00:00">07:00</SelectItem>
-                      <SelectItem value="07:30:00">07:30</SelectItem>
-                      <SelectItem value="08:00:00">08:00</SelectItem>
-                      <SelectItem value="08:30:00">08:30</SelectItem>
-                      <SelectItem value="09:00:00">09:00</SelectItem>
-                      <SelectItem value="09:30:00">09:30</SelectItem>
-                      <SelectItem value="10:00:00">10:00</SelectItem>
-                      <SelectItem value="10:30:00">10:30</SelectItem>
-                      <SelectItem value="11:00:00">11:00</SelectItem>
-                      <SelectItem value="11:30:00">11:30</SelectItem>
-                      <SelectItem value="12:00:00">12:00</SelectItem>
-                      <SelectItem value="12:30:00">12:30</SelectItem>
-                    </SelectGroup>
-                    <SelectGroup>
-                      <SelectLabel>Tarde</SelectLabel>
-                      <SelectItem value="13:00:00">13:00</SelectItem>
-                      <SelectItem value="13:30:00">13:30</SelectItem>
-                      <SelectItem value="14:00:00">14:00</SelectItem>
-                      <SelectItem value="14:30:00">14:30</SelectItem>
-                      <SelectItem value="15:00:00">15:00</SelectItem>
-                      <SelectItem value="15:30:00">15:30</SelectItem>
-                      <SelectItem value="16:00:00">16:00</SelectItem>
-                      <SelectItem value="16:30:00">16:30</SelectItem>
-                      <SelectItem value="17:00:00">17:00</SelectItem>
-                      <SelectItem value="17:30:00">17:30</SelectItem>
-                      <SelectItem value="18:00:00">18:00</SelectItem>
-                      <SelectItem value="18:30:00">18:30</SelectItem>
-                    </SelectGroup>
-                    <SelectGroup>
-                      <SelectLabel>Noite</SelectLabel>
-                      <SelectItem value="19:00:00">19:00</SelectItem>
-                      <SelectItem value="19:30:00">19:30</SelectItem>
-                      <SelectItem value="20:00:00">20:00</SelectItem>
-                      <SelectItem value="20:30:00">20:30</SelectItem>
-                      <SelectItem value="21:00:00">21:00</SelectItem>
-                      <SelectItem value="21:30:00">21:30</SelectItem>
-                      <SelectItem value="22:00:00">22:00</SelectItem>
-                      <SelectItem value="22:30:00">22:30</SelectItem>
-                      <SelectItem value="23:00:00">23:00</SelectItem>
-                      <SelectItem value="23:30:00">23:30</SelectItem>
-                    </SelectGroup>
+                    {availableTimes?.data?.map((time) => (
+                      <SelectItem
+                        key={time.value}
+                        value={time.value}
+                        disabled={!time.available}
+                      >
+                        {time.label} {!time.available && "(Indisponível)"}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />

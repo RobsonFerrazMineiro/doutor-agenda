@@ -37,7 +37,7 @@ import { doctorsTable } from "@/db/schema";
 import { formatCurrencyInCents } from "@/helpers/currency";
 
 import { getAvailability } from "../_helpers/availability";
-import UpsertDoctorForm from "./upsert-doctor-form";
+import UpsertDoctorForm from "./add-doctor-form";
 
 interface DoctorCardProps {
   doctor: typeof doctorsTable.$inferSelect;

@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import AppointmentForm from "./upsert-appointment-form";
+import AppointmentForm from "./add-appointment-form";
 
 interface AppointmentButtonProps {
   patients: Array<any>;
   doctors: Array<any>;
 }
 
-const AppointmentButton = ({ patients, doctors }: AppointmentButtonProps) => {
+const AddAppointmentButton = ({
+  patients,
+  doctors,
+}: AppointmentButtonProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
@@ -32,4 +35,4 @@ const AppointmentButton = ({ patients, doctors }: AppointmentButtonProps) => {
   );
 };
 
-export default AppointmentButton;
+export default AddAppointmentButton;
