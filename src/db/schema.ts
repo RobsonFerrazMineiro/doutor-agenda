@@ -16,6 +16,9 @@ export const usersTable = pgTable("users", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull(),
   image: text("image"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  plan: text("plan"),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
 });
@@ -70,7 +73,6 @@ export const clinicsTable = pgTable("clinics", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .notNull()
     .$onUpdate(() => new Date()),
 });
 
@@ -84,7 +86,6 @@ export const usersToClinicsTable = pgTable("users_to_clinics", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .notNull()
     .$onUpdate(() => new Date()),
 });
 
@@ -111,14 +112,14 @@ export const clinicsTableRelations = relations(clinicsTable, ({ many }) => ({
 
 export const doctorsTable = pgTable("doctors", {
   id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull(),
   clinicId: uuid("clinic_id")
     .notNull()
     .references(() => clinicsTable.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
   avatarImageUrl: text("avatar_image_url"),
   // 1 - Monday, 2 - Tuesday, 3 - Wednesday, 4 - Thursday, 5 - Friday, 6 - Saturday, 0 - Sunday
-  availableFromWeekDays: integer("available_from_week_days").notNull(),
-  availableToWeekDays: integer("available_to_week_days").notNull(),
+  availableFromWeekDay: integer("available_from_week_day").notNull(),
+  availableToWeekDay: integer("available_to_week_day").notNull(),
   availableFromTime: time("available_from_time").notNull(),
   availableToTime: time("available_to_time").notNull(),
   specialty: text("specialty").notNull(),
@@ -126,7 +127,6 @@ export const doctorsTable = pgTable("doctors", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .notNull()
     .$onUpdate(() => new Date()),
 });
 
@@ -141,7 +141,7 @@ export const doctorsTableRelations = relations(
   }),
 );
 
-export const patientsSexEnum = pgEnum("patients_sex", ["male", "female"]);
+export const patientSexEnum = pgEnum("patient_sex", ["male", "female"]);
 
 export const patientsTable = pgTable("patients", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -151,17 +151,16 @@ export const patientsTable = pgTable("patients", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   phoneNumber: text("phone_number").notNull(),
-  sex: patientsSexEnum("sex").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  sex: patientSexEnum("sex").notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .notNull()
     .$onUpdate(() => new Date()),
 });
 
 export const patientsTableRelations = relations(
   patientsTable,
-  ({ many, one }) => ({
+  ({ one, many }) => ({
     clinic: one(clinicsTable, {
       fields: [patientsTable.clinicId],
       references: [clinicsTable.id],
@@ -173,6 +172,7 @@ export const patientsTableRelations = relations(
 export const appointmentsTable = pgTable("appointments", {
   id: uuid("id").defaultRandom().primaryKey(),
   date: timestamp("date").notNull(),
+  appointmentPriceInCents: integer("appointment_price_in_cents").notNull(),
   clinicId: uuid("clinic_id")
     .notNull()
     .references(() => clinicsTable.id, { onDelete: "cascade" }),
@@ -185,13 +185,16 @@ export const appointmentsTable = pgTable("appointments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .notNull()
     .$onUpdate(() => new Date()),
 });
 
 export const appointmentsTableRelations = relations(
   appointmentsTable,
   ({ one }) => ({
+    clinic: one(clinicsTable, {
+      fields: [appointmentsTable.clinicId],
+      references: [clinicsTable.id],
+    }),
     patient: one(patientsTable, {
       fields: [appointmentsTable.patientId],
       references: [patientsTable.id],
@@ -199,10 +202,6 @@ export const appointmentsTableRelations = relations(
     doctor: one(doctorsTable, {
       fields: [appointmentsTable.doctorId],
       references: [doctorsTable.id],
-    }),
-    clinic: one(clinicsTable, {
-      fields: [appointmentsTable.clinicId],
-      references: [clinicsTable.id],
     }),
   }),
 );

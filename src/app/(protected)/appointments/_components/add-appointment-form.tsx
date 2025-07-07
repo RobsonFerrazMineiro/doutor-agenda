@@ -1,5 +1,20 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import dayjs from "dayjs";
+import { CalendarIcon } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { NumericFormat } from "react-number-format";
+import { toast } from "sonner";
+import { z } from "zod";
+
+import { addAppointment } from "@/actions/add-appointment";
+import { getAvailableTimes } from "@/actions/get-available-times";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -32,28 +47,26 @@ import {
 } from "@/components/ui/select";
 import { doctorsTable, patientsTable } from "@/db/schema";
 import { cn } from "@/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
-import { useAction } from "next-safe-action/hooks";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { NumericFormat } from "react-number-format";
-import { toast } from "sonner";
-import { z } from "zod";
 
 const formSchema = z.object({
-  patientId: z.string().min(1, { message: "Paciente é obrigatório" }),
-  doctorId: z.string().min(1, { message: "Médico é obrigatório" }),
-  appointmentPrice: z
-    .number()
-    .min(1, { message: "Valor da consulta é obrigatório" }),
-  date: z.date({ message: "Data é obrigatória" }),
-  time: z.string().min(1, { message: "Horário é obrigatório" }),
+  patientId: z.string().min(1, {
+    message: "Paciente é obrigatório.",
+  }),
+  doctorId: z.string().min(1, {
+    message: "Médico é obrigatório.",
+  }),
+  appointmentPrice: z.number().min(1, {
+    message: "Valor da consulta é obrigatório.",
+  }),
+  date: z.date({
+    message: "Data é obrigatória.",
+  }),
+  time: z.string().min(1, {
+    message: "Horário é obrigatório.",
+  }),
 });
 
-interface AppointmentFormProps {
+interface AddAppointmentFormProps {
   isOpen: boolean;
   patients: (typeof patientsTable.$inferSelect)[];
   doctors: (typeof doctorsTable.$inferSelect)[];
@@ -152,7 +165,7 @@ const AddAppointmentForm = ({
   const isDateTimeEnabled = selectedPatientId && selectedDoctorId;
 
   return (
-    <DialogContent className="max-w-md">
+    <DialogContent className="sm:max-w-[500px]">
       <DialogHeader>
         <DialogTitle>Novo agendamento</DialogTitle>
         <DialogDescription>
@@ -168,12 +181,12 @@ const AddAppointmentForm = ({
               <FormItem>
                 <FormLabel>Paciente</FormLabel>
                 <Select
-                  defaultValue={field.value}
                   onValueChange={field.onChange}
+                  defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione o paciente" />
+                      <SelectValue placeholder="Selecione um paciente" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -188,6 +201,7 @@ const AddAppointmentForm = ({
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="doctorId"
@@ -195,12 +209,12 @@ const AddAppointmentForm = ({
               <FormItem>
                 <FormLabel>Médico</FormLabel>
                 <Select
-                  defaultValue={field.value}
                   onValueChange={field.onChange}
+                  defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione o médico" />
+                      <SelectValue placeholder="Selecione um médico" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -215,57 +229,59 @@ const AddAppointmentForm = ({
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="appointmentPrice"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Valor da consulta</FormLabel>
-                <FormControl>
-                  <NumericFormat
-                    value={field.value}
-                    onValueChange={(values: { floatValue: any }) => {
-                      field.onChange(values.floatValue);
-                    }}
-                    decimalScale={2}
-                    fixedDecimalScale
-                    decimalSeparator=","
-                    thousandSeparator="."
-                    customInput={Input}
-                    prefix="R$ "
-                    disabled={!selectedDoctorId}
-                    allowNegative={false}
-                  />
-                </FormControl>
+                <NumericFormat
+                  value={field.value}
+                  onValueChange={(value) => {
+                    field.onChange(value.floatValue);
+                  }}
+                  decimalScale={2}
+                  fixedDecimalScale
+                  decimalSeparator=","
+                  thousandSeparator="."
+                  prefix="R$ "
+                  allowNegative={false}
+                  disabled={!selectedDoctorId}
+                  customInput={Input}
+                />
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="date"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col">
                 <FormLabel>Data</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !field.value && "text-muted-foreground",
-                      )}
-                      disabled={!isDateTimeEnabled}
-                    >
-                      <CalendarIcon />
-                      {field.value ? (
-                        format(field.value, "PPP", { locale: ptBR })
-                      ) : (
-                        <span>Selecione uma data</span>
-                      )}
-                    </Button>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        disabled={!isDateTimeEnabled}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !field.value && "text-muted-foreground",
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {field.value ? (
+                          format(field.value, "PPP", { locale: ptBR })
+                        ) : (
+                          <span>Selecione uma data</span>
+                        )}
+                      </Button>
+                    </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value}
@@ -281,6 +297,7 @@ const AddAppointmentForm = ({
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="time"
@@ -288,9 +305,9 @@ const AddAppointmentForm = ({
               <FormItem>
                 <FormLabel>Horário</FormLabel>
                 <Select
-                  value={field.value}
                   onValueChange={field.onChange}
-                  disabled={!isDateTimeEnabled}
+                  defaultValue={field.value}
+                  disabled={!isDateTimeEnabled || !selectedDate}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full">
@@ -313,14 +330,11 @@ const AddAppointmentForm = ({
               </FormItem>
             )}
           />
+
           <DialogFooter>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={upsertAppointmentAction.isPending}
-            >
-              {upsertAppointmentAction.isPending
-                ? "Salvando..."
+            <Button type="submit" disabled={createAppointmentAction.isPending}>
+              {createAppointmentAction.isPending
+                ? "Criando..."
                 : "Criar agendamento"}
             </Button>
           </DialogFooter>
@@ -330,4 +344,4 @@ const AddAppointmentForm = ({
   );
 };
 
-export default AppointmentForm;
+export default AddAppointmentForm;

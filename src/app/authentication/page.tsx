@@ -1,11 +1,22 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { auth } from "@/lib/auth";
 
 import LoginForm from "./components/login-form";
 import SignUpForm from "./components/sign-up-form";
+
+export const upsertDoctorSchema = z
+  .object({
+    // ...existing code...
+    availableFromWeekDay: z.number().min(0).max(6),
+    availableToWeekDay: z.number().min(0).max(6),
+    // ...existing code...
+  })
+  // ...existing code...
+export type UpsertDoctorSchema = z.infer<typeof upsertDoctorSchema>;
 
 const AutenticationPage = async () => {
   const session = await auth.api.getSession({ headers: await headers() });

@@ -1,35 +1,38 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import AppointmentForm from "./add-appointment-form";
 
-interface AppointmentButtonProps {
-  patients: Array<any>;
-  doctors: Array<any>;
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { doctorsTable, patientsTable } from "@/db/schema";
+
+import AddAppointmentForm from "./add-appointment-form";
+
+interface AddAppointmentButtonProps {
+  patients: (typeof patientsTable.$inferSelect)[];
+  doctors: (typeof doctorsTable.$inferSelect)[];
 }
 
 const AddAppointmentButton = ({
   patients,
   doctors,
-}: AppointmentButtonProps) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+}: AddAppointmentButtonProps) => {
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button>
           <Plus />
           Novo agendamento
         </Button>
       </DialogTrigger>
-      <AppointmentForm
-        isOpen={isDialogOpen}
+      <AddAppointmentForm
+        isOpen={isOpen}
         patients={patients}
         doctors={doctors}
-        onSuccess={() => setIsDialogOpen(false)}
+        onSuccess={() => setIsOpen(false)}
       />
     </Dialog>
   );

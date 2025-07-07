@@ -75,7 +75,10 @@ const AppointmentsTableActions = ({
         <DropdownMenuSeparator />
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <DropdownMenuItem
+              onSelect={(e) => e.preventDefault()}
+              variant="destructive"
+            >
               <TrashIcon />
               Excluir
             </DropdownMenuItem>

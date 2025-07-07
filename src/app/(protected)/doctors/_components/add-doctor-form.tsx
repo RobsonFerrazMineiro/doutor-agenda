@@ -88,8 +88,8 @@ const UpsertDoctorForm = ({
       appointmentPrice: doctor?.appointmentPriceInCents
         ? doctor.appointmentPriceInCents / 100
         : 0,
-      availableFromWeekDay: doctor?.availableFromWeekDays?.toString() ?? "1",
-      availableToWeekDay: doctor?.availableToWeekDays?.toString() ?? "5",
+      availableFromWeekDay: doctor?.availableFromWeekDay?.toString() ?? "1",
+      availableToWeekDay: doctor?.availableToWeekDay?.toString() ?? "5",
       availableFromTime: doctor?.availableFromTime ?? "",
       availableToTime: doctor?.availableToTime ?? "",
     },
@@ -103,8 +103,8 @@ const UpsertDoctorForm = ({
         appointmentPrice: doctor?.appointmentPriceInCents
           ? doctor.appointmentPriceInCents / 100
           : 0,
-        availableFromWeekDay: doctor?.availableFromWeekDays?.toString() ?? "1",
-        availableToWeekDay: doctor?.availableToWeekDays?.toString() ?? "5",
+        availableFromWeekDay: doctor?.availableFromWeekDay?.toString() ?? "1",
+        availableToWeekDay: doctor?.availableToWeekDay?.toString() ?? "5",
         availableFromTime: doctor?.availableFromTime ?? "",
         availableToTime: doctor?.availableToTime ?? "",
       });
@@ -125,8 +125,8 @@ const UpsertDoctorForm = ({
     upsertDoctorAction.execute({
       ...values,
       id: doctor?.id,
-      availableFromWeekDays: parseInt(values.availableFromWeekDay),
-      availableToWeekDays: parseInt(values.availableToWeekDay),
+      availableFromWeekDay: parseInt(values.availableFromWeekDay),
+      availableToWeekDay: parseInt(values.availableToWeekDay),
       appointmentPriceInCents: values.appointmentPrice * 100,
     });
   };
