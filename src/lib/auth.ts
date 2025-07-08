@@ -10,7 +10,6 @@ import { eq } from "drizzle-orm";
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
-    usePlural: true,
     schema,
   }),
 

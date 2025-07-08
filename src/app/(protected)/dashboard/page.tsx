@@ -3,7 +3,16 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 
-import SignOutButton from "./_components/sign-out-button";
+import {
+  PageActions,
+  PageContainer,
+  PageContent,
+  PageDescription,
+  PageHeader,
+  PageHeaderContent,
+  PageTitle,
+} from "@/components/ui/page-container";
+import { DatePicker } from "./_components/date-picker";
 
 const DashboardPage = async () => {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -15,13 +24,20 @@ const DashboardPage = async () => {
   }
 
   return (
-    <div className="flex h-screen flex-col items-center justify-center">
-      <h1 className="mb-4 text-2xl font-bold">Dashboard</h1>
-      <p>Bem-vindo, {session?.user?.name}!</p>
-      <p>Email: {session?.user?.email}</p>
-
-      <SignOutButton />
-    </div>
+    <PageContainer>
+      <PageHeader>
+        <PageHeaderContent>
+          <PageTitle>Dashboard</PageTitle>
+          <PageDescription>
+            Gerencie sua clínica, médicos e pacientes de forma simples e rápida.
+          </PageDescription>
+        </PageHeaderContent>
+        <PageActions>
+          <DatePicker />
+        </PageActions>
+      </PageHeader>
+      <PageContent children={undefined}></PageContent>
+    </PageContainer>
   );
 };
 export default DashboardPage;
