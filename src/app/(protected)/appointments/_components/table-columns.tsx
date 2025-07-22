@@ -45,9 +45,17 @@ export const appointmentsTableColumns: ColumnDef<AppointmentWithRelations>[] = [
     header: "Data e Hora",
     cell: (params) => {
       const appointment = params.row.original;
-      return format(new Date(appointment.date), "dd/MM/yyyy 'às' HH:mm", {
-        locale: ptBR,
-      });
+      try {
+        const date = new Date(appointment.date);
+        if (isNaN(date.getTime())) {
+          return "Data inválida";
+        }
+        return format(date, "dd/MM/yyyy 'às' HH:mm", {
+          locale: ptBR,
+        });
+      } catch {
+        return "Data inválida";
+      }
     },
   },
   {
