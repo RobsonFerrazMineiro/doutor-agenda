@@ -1,15 +1,21 @@
+import {
+  CalendarIcon,
+  DollarSignIcon,
+  UserIcon,
+  UsersIcon,
+} from "lucide-react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrencyInCents } from "@/helpers/currency";
-import { Calendar, DollarSign, Stethoscope, Users } from "lucide-react";
 
 interface StatsCardsProps {
-  totalRevenue: string | null;
+  totalRevenue: number | null;
   totalAppointments: number;
   totalPatients: number;
   totalDoctors: number;
 }
 
-export const StatsCards = ({
+const StatsCards = ({
   totalRevenue,
   totalAppointments,
   totalPatients,
@@ -18,29 +24,23 @@ export const StatsCards = ({
   const stats = [
     {
       title: "Faturamento",
-      value: totalRevenue
-        ? formatCurrencyInCents(Number(totalRevenue))
-        : "R$ 0,00",
-      icon: DollarSign,
-      description: "Receita do período selecionado",
+      value: totalRevenue ? formatCurrencyInCents(totalRevenue) : "R$ 0,00",
+      icon: DollarSignIcon,
     },
     {
-      title: "Consultas",
+      title: "Agendamentos",
       value: totalAppointments.toString(),
-      icon: Calendar,
-      description: "Total de consultas agendadas",
+      icon: CalendarIcon,
     },
     {
       title: "Pacientes",
       value: totalPatients.toString(),
-      icon: Users,
-      description: "Pacientes cadastrados",
+      icon: UserIcon,
     },
     {
       title: "Médicos",
       value: totalDoctors.toString(),
-      icon: Stethoscope,
-      description: "Médicos na clínica",
+      icon: UsersIcon,
     },
   ];
 
@@ -60,9 +60,6 @@ export const StatsCards = ({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-muted-foreground text-xs">
-                {stat.description}
-              </p>
             </CardContent>
           </Card>
         );
@@ -70,3 +67,5 @@ export const StatsCards = ({
     </div>
   );
 };
+
+export default StatsCards;
